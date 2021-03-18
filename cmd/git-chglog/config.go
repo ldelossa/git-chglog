@@ -72,6 +72,7 @@ type JiraOptions struct {
 // Options ...
 type Options struct {
 	TagFilterPattern string             `yaml:"tag_filter_pattern"`
+	TagSortBy        string             `yaml:"tag_sort_by"`
 	Commits          CommitOptions      `yaml:"commits"`
 	CommitGroups     CommitGroupOptions `yaml:"commit_groups"`
 	Header           PatternOptions     `yaml:"header"`
@@ -122,6 +123,7 @@ func (config *Config) Normalize(ctx *CLIContext) error {
 	}
 
 	config.normalizeStyle()
+	config.normalizeTagSortBy()
 
 	return nil
 }
@@ -135,6 +137,19 @@ func (config *Config) normalizeStyle() {
 		config.normalizeStyleOfGitLab()
 	case "bitbucket":
 		config.normalizeStyleOfBitbucket()
+	}
+}
+
+func (config *Config) normalizeTagSortBy() {
+	switch {
+	case config.Options.TagSortBy == "":
+		config.Options.TagSortBy = "date"
+	case strings.EqualFold(config.Options.TagSortBy, "date"):
+		config.Options.TagSortBy = "date"
+	case strings.EqualFold(config.Options.TagSortBy, "semver"):
+		config.Options.TagSortBy = "semver"
+	default:
+		config.Options.TagSortBy = "date"
 	}
 }
 
@@ -293,6 +308,7 @@ func (config *Config) Convert(ctx *CLIContext) *chglog.Config {
 		Options: &chglog.Options{
 			NextTag:                     ctx.NextTag,
 			TagFilterPattern:            ctx.TagFilterPattern,
+			TagSortBy:                   opts.TagSortBy,
 			NoCaseSensitive:             ctx.NoCaseSensitive,
 			Paths:                       ctx.Paths,
 			CommitFilters:               opts.Commits.Filters,

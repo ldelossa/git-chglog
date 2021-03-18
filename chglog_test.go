@@ -215,6 +215,7 @@ change message.`)
 				RepositoryURL: "https://github.com/git-chglog/git-chglog",
 			},
 			Options: &Options{
+				TagSortBy: "date",
 				CommitFilters: map[string][]string{
 					"Type": {
 						"feat",
@@ -329,7 +330,8 @@ func TestGeneratorWithNextTag(t *testing.T) {
 				RepositoryURL: "https://github.com/git-chglog/git-chglog",
 			},
 			Options: &Options{
-				NextTag: "3.0.0",
+				TagSortBy: "date",
+				NextTag:   "3.0.0",
 				CommitFilters: map[string][]string{
 					"Type": {
 						"feat",

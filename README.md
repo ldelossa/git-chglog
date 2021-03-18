@@ -263,6 +263,7 @@ info:
 
 options:
   tag_filter_pattern: '^v'
+  tag_sort_by: "date"
 
   commits:
     filters:
@@ -346,6 +347,14 @@ so it is recommended to specify it.
 ### `options`
 
 Options used to process commits.
+
+#### `options.tag_sort_by`
+
+Options concerning the acquisition and sort of commits.
+
+| Required | Type        | Default   | Description                                                                                                         |
+|:---------|:------------|:----------|:--------------------------------------------------------------------------------------------------------------------|
+| N        | String      | `"date"` | Defines how tags are sorted in the generated change log. Values: "date", "semver". |
 
 #### `options.commits`
 

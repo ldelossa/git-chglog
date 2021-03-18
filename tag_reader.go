@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coreos/go-semver/semver"
 	gitcmd "github.com/tsuyoshiwada/go-gitcmd"
 )
 
@@ -14,13 +15,15 @@ type tagReader struct {
 	client    gitcmd.Client
 	separator string
 	reFilter  *regexp.Regexp
+	sortBy    string
 }
 
-func newTagReader(client gitcmd.Client, filterPattern string) *tagReader {
+func newTagReader(client gitcmd.Client, filterPattern string, sortBy string) *tagReader {
 	return &tagReader{
 		client:    client,
 		separator: "@@__CHGLOG__@@",
 		reFilter:  regexp.MustCompile(filterPattern),
+		sortBy:    sortBy,
 	}
 }
 
@@ -71,10 +74,35 @@ func (r *tagReader) ReadAll() ([]*Tag, error) {
 		})
 	}
 
-	r.sortTags(tags)
-	r.assignPreviousAndNextTag(tags)
+	switch r.sortBy {
+	case "date":
+		r.sortTags(tags)
+		r.assignPreviousAndNextTag(tags)
+	case "semver":
+		filterSemVerTags(&tags)
+		r.sortTagsBySemver(tags)
+		r.assignPreviousAndNextTag(tags)
+	}
 
 	return tags, nil
+}
+
+func filterSemVerTags(tags *[]*Tag) {
+	// filter out any non-semver tags
+	for i, t := range *tags {
+		// remove leading v, since its so
+		// common.
+		name := t.Name
+		if strings.HasPrefix(name, "v") {
+			name = strings.TrimPrefix(name, "v")
+		}
+
+		// attempt semver parse, if not successful
+		// remove it from tags slice.
+		if _, err := semver.NewVersion(name); err != nil {
+			*tags = append((*tags)[:i], (*tags)[i+1:]...)
+		}
+	}
 }
 
 func (*tagReader) parseRefname(input string) string {
@@ -122,5 +150,15 @@ func (*tagReader) assignPreviousAndNextTag(tags []*Tag) {
 func (*tagReader) sortTags(tags []*Tag) {
 	sort.Slice(tags, func(i, j int) bool {
 		return !tags[i].Date.Before(tags[j].Date)
+	})
+}
+
+func (*tagReader) sortTagsBySemver(tags []*Tag) {
+	sort.Slice(tags, func(i, j int) bool {
+		semver1 := strings.TrimPrefix(tags[i].Name, "v")
+		semver2 := strings.TrimPrefix(tags[j].Name, "v")
+		v1 := semver.New(semver1)
+		v2 := semver.New(semver2)
+		return v2.LessThan(*v1)
 	})
 }
